@@ -1,0 +1,70 @@
+system("mkdir 'animation'")
+system("rm ./animation/*")
+list = system('ls')
+
+set terminal png size 2000,2000
+set size ratio -1	# Same ratio size X and Y axis
+set xtics 0,1		# tics every 1 node at X and Y axes from coordinates (0,0)
+set ytics 0,1
+
+#set grid ytics mytics  # draw lines for each ytics and mytics
+set mytics 2           # set the spacing for the mytics
+set mxtics 2           # set the spacing for the mytics
+set grid front mxtics mytics lw 1.5 lt -1 lc rgb 'black' # enable the grid
+
+set xrange [-0.5:64.5]	# From -0.5 until Ludwig input NX+0.5
+set yrange [-0.5:32.5]	# From -0.5 until Ludwig input NX+0.5
+set cbrange [-0.25:1.25]	# This is for the order parameter intensity
+
+set palette model HSV defined ( 0 0 1 1, 1 1 1 1 )	# Choose a palette for the order parameter intensity
+
+set xlabel "x (lb units)"	# Label texts and legend
+set ylabel "z (lb units)"
+set key at 64,64 font "Times-New-Roman,18" textcolor rgb "black"
+
+
+# Data:
+# Files for order parameter field are text files with X Z order parameter for a specific Y plane. These files are called phi%d, where %d is an integer. Eg. phi100, phi200...
+# Files for velocity field  are text files with X Z vx vz for a specific Y plane. These files are called vel%d, where %d is an integer. Eg. vel100, vel200...
+# File for particle is a unique file. The columns present here correspond to: 3:X 5:Z 6:vx 8:vz 15:angle
+
+# Plot:
+# first the order parameter. W image needed.
+# second the velocity field with arrows. W vectors needed. I multiply per 100 the values to increase the arrows
+# third and fourth the particle. Particle is a half circle: x:y:R:angle_0:angle_final, being R the radius of the particle. I remove 1 to x and y to merge the order parameter with the particle position.
+# fifth the center of the particle (x,y) position as a point
+# sixth the velocity of the CM of the particle, with a vector multiplied per 1000.
+# Notice that every ::a::a is to select the propper row to print. E.g. if you print every 1000 steps, inside colloid file you will have:
+# time 1000
+# time 2000
+# time 3000
+# ... For first image you only need row 1, for second only row 2, for third only row 3...
+
+a = 0
+
+do for [i=1000:300000:1000] {	# first file for order parameter:last file for order parameter:frequency of printing
+	#outfile = sprintf('animation/%d.png',i)
+	outfile = sprintf('animation/%d.png',a)	# Save the plot inside folder animation
+	set output outfile	
+
+        a = a+1	# Counter
+
+   	plot sprintf('phi%d',i) u ($1):($2):3 w image title 'fluid_phi',sprintf('vel%d',i) u ($1):($2):($3*100):($4*100) w vectors head size 0.1,20,60 lc rgb "black" title 'fluid_vel*10^2', "pos+vel_0.dat" every ::a::a u ($3-1):($5-1):(4.5):($15):($15+180) with circles fill transparent pattern 4 lc rgb "black" title 'Active side', "pos+vel_0.dat" every ::a::a u ($3-1):($5-1):(4.5):($15+180):($15) with circles title 'Inactive side', "pos+vel_0.dat" every ::a::a u ($3-1):($5-1) with points pt 7 ps 1 title 'Center',"pos+vel_0.dat" every ::a::a u ($3-1):($5-1):(1000*$6):(1000*$8) with vectors filled head lw 3 title 'v*1000'
+}
+
+# If outfile = sprintf('animation/%d.png',a) fails, you need to override it with the previous line with i)
+# In that case you need to activate the following lines. These lines rename the files to have all files with a name only differing by 1
+# (ffmpeg wasn't recognizing me a series otherwise...)
+
+#system("cp plots_video_rename ./animation/plots_video_rename")
+#cd "animation"
+#system("./plots_video_rename")
+#cd ".."
+
+# Make the movie from the above plots done with ffmpeg.
+# if you don't have ffmpeg, install it with sudo apt-get install ffmpeg
+# libx264 is the video codec and yuv420p is for resolution. -y is to override the output file in case of necessity 
+system("ffmpeg -i animation/%d.png -c:v libx264 -vf fps=10 -pix_fmt yuv420p order_parameter.mp4 -y")	
+
+
+

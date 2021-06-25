@@ -1,0 +1,11 @@
+#!/bin/bash
+# Things to change:
+# 301 is (final time step/frequency of printing)+1
+# 1000 is frequency of printing.
+# Here we simulated until time step 300.000 and printed every 1000 time steps.
+
+for ((i=1;i<301;i++))
+do
+	j=$(echo "1000*$i" | bc -l)
+	mv "$j.png" "$i.png"
+done
