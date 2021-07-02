@@ -65,9 +65,9 @@ do
 
 				cp cortesC/pos+vel_0.dat cortes$plano/
 				cd cortes$plano
-				cp ../../zo ./
+				cp ../../make_movie_order_parameter ./
 				cp ../../plots_video_rename ./
-				gnuplot zo
+				gnuplot make_movie_order_parameter
 				cp zoxygen.mp4 ../../VIDEOS/O_$i.mp4
 				cd ..
 			fi
