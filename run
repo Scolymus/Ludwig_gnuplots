@@ -1,0 +1,77 @@
+#!/bin/bash
+
+make_videos=1	#1: Don't make them; 0: Make them
+inicio=100	# starting time step
+fin=80000	 # end time step
+cada=100	# freq. step
+plano=16	# Slice number
+cpuX=2
+cpuY=2
+cpuZ=2
+LX=64
+LY=32
+LZ=32
+
+#DO NOT CHANGE FROM HERE!
+#------------------------
+lista=$(ls | grep -v 'GRAFICAS\|FINO\|VIDEOS')
+mkdir -p GRAFICAS/pos
+mkdir -p GRAFICAS/angle
+mkdir -p GRAFICAS/m
+mkdir -p GRAFICAS/v
+mkdir -p GRAFICAS/v_r
+
+if [ $make_videos -eq 0 ]
+then
+	rm -r VIDEOS
+	mkdir -p VIDEOS
+fi
+
+for i in $lista;
+do
+    if [ -d ${i} ]; then
+		cd -- $i
+		echo $i
+			rm conv16
+			rm ab16ll
+			rm vel16
+			cp ../conv16 ./
+			cp ../ab16ll ./
+			cp ../vel16 ./
+
+			rm -r cortesC
+			./conv16 $inicio $fin $cada
+
+			cp ../plot	cortesC/plot
+			cd cortesC
+				gnuplot plot
+			cd ..
+
+			cp cortesC/pos+vel_0.dat ../GRAFICAS/$i
+			cp cortesC/position.png ../GRAFICAS/$i._pos.png
+			cp cortesC/angle.png ../GRAFICAS/$i._angle.png
+			cp cortesC/m.png ../GRAFICAS/$i._m.png
+			cp cortesC/v.png ../GRAFICAS/$i._v.png
+
+			cp cortesC/position.png ../GRAFICAS/pos/$i._pos.png
+			cp cortesC/angle.png ../GRAFICAS/angle/$i._angle.png
+			cp cortesC/m.png ../GRAFICAS/m/$i._m.png
+			cp cortesC/v.png ../GRAFICAS/v/$i._v.png
+
+			if [ $make_videos -eq 0 ]
+			then
+				./ab16ll $LX $LY $LZ $cpuX $cpuY $cpuZ $inicio $fin $cada $plano
+				./vel16 $LX $LY $LZ 1 1 1 $inicio $fin $cada $plano
+
+				cp cortesC/pos+vel_0.dat cortes$plano/
+				cd cortes$plano
+				cp ../../zo ./
+				cp ../../plots_video_rename ./
+				gnuplot zo
+				cp zoxygen.mp4 ../../VIDEOS/O_$i.mp4
+				cd ..
+			fi
+
+		cd ..
+    fi
+done
